@@ -25,6 +25,8 @@ import argparse
 import json
 import os
 import sys
+import time
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -89,18 +91,34 @@ def validate_dialog(d: dict, expect: dict | None = None) -> list[str]:
 # LLM client (OpenAI-compatible)
 # --------------------------------------------------------------------------- #
 
-def call_llm(messages: list[dict], model: str, base_url: str, api_key: str, temperature: float = 0.8) -> str:
+def call_llm(messages: list[dict], model: str, base_url: str, api_key: str,
+             temperature: float = 0.8, retries: int = 5) -> str:
     url = base_url.rstrip("/") + "/chat/completions"
     body = json.dumps(
         {"model": model, "messages": messages, "temperature": temperature, "response_format": {"type": "json_object"}}
     ).encode("utf-8")
-    req = urllib.request.Request(url, data=body, method="POST")
-    req.add_header("Content-Type", "application/json")
-    if api_key:
-        req.add_header("Authorization", f"Bearer {api_key}")
-    with urllib.request.urlopen(req, timeout=120) as resp:
-        payload = json.loads(resp.read().decode("utf-8"))
-    return payload["choices"][0]["message"]["content"]
+    for attempt in range(retries):
+        req = urllib.request.Request(url, data=body, method="POST")
+        req.add_header("Content-Type", "application/json")
+        # Beberapa provider (mis. Groq di balik Cloudflare) memblok User-Agent default
+        # urllib (error 1010). Samarkan sebagai browser biasa.
+        req.add_header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                       "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36")
+        if api_key:
+            req.add_header("Authorization", f"Bearer {api_key}")
+        try:
+            with urllib.request.urlopen(req, timeout=120) as resp:
+                payload = json.loads(resp.read().decode("utf-8"))
+            return payload["choices"][0]["message"]["content"]
+        except urllib.error.HTTPError as e:
+            # 429 = rate-limit; tunggu makin lama tiap percobaan (5,10,20,40s) lalu ulang.
+            if e.code == 429 and attempt < retries - 1:
+                jeda = 5 * (2 ** attempt)
+                print(f"    [429] kena rate-limit, tunggu {jeda}s lalu coba lagi...", file=sys.stderr)
+                time.sleep(jeda)
+                continue
+            raise
+    raise RuntimeError("gagal setelah beberapa kali retry")
 
 
 def parse_json_lenient(text: str) -> dict:
@@ -139,6 +157,8 @@ def main() -> int:
     ap.add_argument("--limit", type=int, default=0, help="Batasi jumlah sel yang digenerate (0 = semua).")
     ap.add_argument("--overwrite", action="store_true", help="Timpa dialog yang sudah ada (default: skip = resume).")
     ap.add_argument("--temperature", type=float, default=0.8)
+    ap.add_argument("--delay", type=float, default=4.0,
+                    help="Jeda (detik) antar request supaya tidak kena rate-limit. Default 4.")
     ap.add_argument("--model", default=os.getenv("JAGO_LLM_MODEL", ""))
     args = ap.parse_args()
 
@@ -190,6 +210,7 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — generator batch, lanjut sel berikutnya
             fail += 1
             print(f"[ERROR] {cell['scenario_id']}: {e}", file=sys.stderr)
+        time.sleep(args.delay)  # pacing antar request agar ramah rate-limit
 
     print(f"\nSelesai. ok={ok} skip={skip} gagal={fail}")
     return 0
