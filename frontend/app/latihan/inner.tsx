@@ -49,6 +49,13 @@ export default function LatihanInner() {
   const [result, setResult] = useState<EvaluateResponse | null>(null);
   const akhirPercakapan = useRef<HTMLDivElement>(null);
 
+  // --- Voice (Web Speech API — berjalan di browser, tanpa server/GPU) ---
+  // Fitur opsional; mode teks tetap jadi jalur utama. STT & TTS memakai bahasa id-ID.
+  const [voiceOn, setVoiceOn] = useState(false); // baca balasan pelanggan dengan suara
+  const [listening, setListening] = useState(false); // sedang merekam suara sales
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const terakhirDibaca = useRef(0);
+
   useEffect(() => {
     if (!id) return;
     getScenario(id)
@@ -63,6 +70,61 @@ export default function LatihanInner() {
   useEffect(() => {
     akhirPercakapan.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [history, loading]);
+
+  // Bacakan giliran pelanggan terbaru saat mode suara aktif.
+  useEffect(() => {
+    if (!voiceOn) return;
+    const terakhir = history[history.length - 1];
+    if (terakhir?.role === "pelanggan" && history.length > terakhirDibaca.current) {
+      terakhirDibaca.current = history.length;
+      bicara(terakhir.text);
+    }
+  }, [history, voiceOn]);
+
+  // Hentikan suara & rekaman kalau komponen dilepas / pindah halaman.
+  useEffect(() => {
+    return () => {
+      recognitionRef.current?.stop();
+      if (typeof window !== "undefined") window.speechSynthesis?.cancel();
+    };
+  }, []);
+
+  function bicara(teks: string) {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    const ucap = new SpeechSynthesisUtterance(teks);
+    ucap.lang = "id-ID";
+    window.speechSynthesis.speak(ucap);
+  }
+
+  function toggleDengar() {
+    const SR =
+      (window as unknown as { SpeechRecognition?: SpeechRecognitionCtor; webkitSpeechRecognition?: SpeechRecognitionCtor })
+        .SpeechRecognition ||
+      (window as unknown as { webkitSpeechRecognition?: SpeechRecognitionCtor }).webkitSpeechRecognition;
+    if (!SR) {
+      setErr("Browser ini belum mendukung input suara. Coba pakai Chrome atau Edge.");
+      return;
+    }
+    if (listening) {
+      recognitionRef.current?.stop();
+      return;
+    }
+    window.speechSynthesis?.cancel(); // jangan sampai TTS & mic bunyi barengan
+    const rec = new SR();
+    rec.lang = "id-ID";
+    rec.interimResults = false;
+    rec.continuous = false;
+    rec.onresult = (e: SpeechRecognitionEventLike) => {
+      const teks = e.results[0][0].transcript;
+      setInput((prev) => (prev ? prev + " " : "") + teks);
+    };
+    rec.onend = () => setListening(false);
+    rec.onerror = () => setListening(false);
+    recognitionRef.current = rec;
+    setListening(true);
+    rec.start();
+  }
 
   async function kirim() {
     if (!input.trim() || !scenario || loading) return;
@@ -158,6 +220,7 @@ export default function LatihanInner() {
             onClick={() => {
               setResult(null);
               setErr(null);
+              terakhirDibaca.current = 0;
               setHistory([{ role: "pelanggan", text: scenario.pembuka }]);
             }}
             className="bg-tinta px-5 py-2.5 text-sm font-medium text-kertas transition hover:bg-bata-tua"
@@ -185,7 +248,19 @@ export default function LatihanInner() {
           <Link href="/" className="text-sm text-tinta-lembut underline-offset-4 hover:underline">
             ← Ganti skenario
           </Link>
-          <ModeBadge />
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setVoiceOn((v) => !v)}
+              aria-pressed={voiceOn}
+              title="Bacakan balasan pelanggan dengan suara"
+              className={`border px-2.5 py-1 text-xs font-medium transition ${
+                voiceOn ? "border-bata bg-bata-muda/40 text-bata-tua" : "border-garis-tua text-tinta-lembut hover:border-tinta"
+              }`}
+            >
+              {voiceOn ? "🔊 Suara: on" : "🔇 Suara: off"}
+            </button>
+            <ModeBadge />
+          </div>
         </div>
         <h1 className="mt-3 font-display text-2xl font-bold tracking-tight">{scenario.judul}</h1>
         <p className="mt-1 text-sm text-tinta-samar">
@@ -214,11 +289,23 @@ export default function LatihanInner() {
 
       <div className="sticky bottom-0 -mx-6 border-t border-garis bg-kertas/95 px-6 pb-6 pt-4 backdrop-blur">
         <div className="flex gap-2">
+          <button
+            onClick={toggleDengar}
+            title={listening ? "Berhenti merekam" : "Bicara (ubah suara jadi teks)"}
+            aria-label="Input suara"
+            className={`shrink-0 border px-3 py-2.5 text-sm transition ${
+              listening
+                ? "animate-pulse border-bata bg-bata text-kertas"
+                : "border-garis-tua hover:border-bata"
+            }`}
+          >
+            {listening ? "● Merekam…" : "🎤"}
+          </button>
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && kirim()}
-            placeholder="Tulis jawabanmu sebagai sales…"
+            placeholder="Tulis atau ucapkan jawabanmu sebagai sales…"
             aria-label="Respons jualan"
             className="min-w-0 flex-1 border border-garis-tua bg-white px-4 py-2.5 text-sm outline-none transition placeholder:text-tinta-samar focus:border-bata"
           />
@@ -241,6 +328,20 @@ export default function LatihanInner() {
     </main>
   );
 }
+
+// Tipe minimal Web Speech API (belum ada di lib TS standar).
+type SpeechRecognitionEventLike = { results: { [i: number]: { [j: number]: { transcript: string } } } };
+interface SpeechRecognitionLike {
+  lang: string;
+  interimResults: boolean;
+  continuous: boolean;
+  onresult: (e: SpeechRecognitionEventLike) => void;
+  onend: () => void;
+  onerror: () => void;
+  start: () => void;
+  stop: () => void;
+}
+type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
 
 function Gelembung({ pesan }: { pesan: ChatMessage }) {
   const sales = pesan.role === "sales";
