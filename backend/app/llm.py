@@ -85,7 +85,7 @@ def _load() -> tuple[object, object]:
         try:
             tok = AutoTokenizer.from_pretrained(str(adapter) if punya_adapter else settings.base_model_id)
             model = AutoModelForCausalLM.from_pretrained(
-                settings.base_model_id, quantization_config=quant, torch_dtype=dtype, device_map="auto"
+                settings.base_model_id, quantization_config=quant, torch_dtype=dtype, device_map={"": 0}
             )
             if punya_adapter:
                 from peft import PeftModel
