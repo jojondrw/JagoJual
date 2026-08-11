@@ -89,15 +89,35 @@ keluaran model asli.
 
 Dikembangkan & didemokan di **RTX 4050 6GB** (4-bit). Adapter LoRA sudah ada di `model/checkpoints/`.
 
+**Python 3.10 atau 3.11** — torch/bitsandbytes belum punya wheel untuk 3.12+. Cek dengan
+`python --version`; kalau lebih baru, pakai interpreter 3.11 terpisah (`py -3.11 -m venv .venv`).
+
 ```bash
 cd backend
-pip install -r requirements.txt -r requirements-model.txt   # torch: sesuaikan versi CUDA
-JAGOJUAL_MODE=local uvicorn app.main:app
+py -3.11 -m venv .venv && .venv\Scripts\activate   # Windows
+pip install -r requirements.txt -r requirements-model.txt
+pip install torch --index-url https://download.pytorch.org/whl/cu121 --force-reinstall   # wajib, atau torch kepasang versi CPU
 ```
 
-Bobot base (~5 GB terkuantisasi) diunduh otomatis dari Hugging Face saat start pertama.
-Model dimuat **sekali** ke proses. **Tidak ada training, auto-tuning, atau feedback loop
-saat demo**; parameter statis sesuai batasan MVP rulebook.
+Cek kritis sebelum lanjut — kalau salah satu gagal, jangan lanjut:
+```bash
+python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))"   # harus True + nama GPU
+python -c "import bitsandbytes"                                                              # harus tanpa error
+```
+
+```bash
+JAGOJUAL_MODE=local PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True uvicorn app.main:app
+```
+
+Bobot base (~15 GB, fp16) diunduh dari Hugging Face saat request pertama masuk (pemuatan
+malas, bukan saat startup), lalu dikuantisasi ke 4-bit saat dimuat ke memori. Model dimuat
+**sekali** ke proses. **Tidak ada training, auto-tuning, atau feedback loop saat demo**;
+parameter statis sesuai batasan MVP rulebook.
+
+**VRAM 6GB itu pas-pasan** — di GPU sekelas RTX 4050, terukur ~5,6–5,9 GB terpakai saat
+generate, sisa headroom cuma ~250–500 MB. Wajib set `PYTORCH_CUDA_ALLOC_CONF` di atas
+(tanpa itu, fragmentasi memori CUDA bisa bikin proses mati mendadak walau VRAM sebenarnya
+cukup), dan tutup Chrome/app berat GPU lain **sebelum** start backend, bukan sesudahnya.
 
 Kalau model/adapter gagal dimuat, API menjawab **503 dengan sebab yang jelas** dan **tidak**
 diam-diam berpindah ke mock. Hasil mock bukan penilaian AI, jadi menyajikannya seolah
