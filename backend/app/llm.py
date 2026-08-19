@@ -16,8 +16,14 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
 import threading
+
+# Pecah alokasi CUDA jadi segmen yang bisa membesar. Di GPU kecil (mis. 6GB) ini
+# mengurangi fragmentasi yang bikin proses mati mendadak walau VRAM sebenarnya cukup.
+# Harus di-set sebelum torch meng-inisialisasi CUDA (backup dari env var di README).
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 
 from . import prompts
 from .config import settings
@@ -73,19 +79,30 @@ def _load() -> tuple[object, object]:
 
         dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
         quant = None
+        # Default: semua layer di GPU tunggal (cepat). Kalau JAGOJUAL_CPU_OFFLOAD=1, sebagian
+        # layer ditumpahkan ke RAM (fp32) supaya GPU 6GB dapat headroom dan tidak crash.
+        device_map: object = {"": 0}
+        max_memory = None
         if settings.load_4bit:
             quant = BitsAndBytesConfig(
                 load_in_4bit=True,
                 bnb_4bit_quant_type="nf4",
                 bnb_4bit_use_double_quant=True,
                 bnb_4bit_compute_dtype=dtype,
+                # Wajib True agar layer yang di-CPU boleh fp32; kalau tidak, offload 4-bit error.
+                llm_int8_enable_fp32_cpu_offload=settings.cpu_offload,
             )
+            if settings.cpu_offload:
+                device_map = "auto"
+                max_memory = {0: f"{settings.gpu_mem_gib}GiB", "cpu": f"{settings.cpu_mem_gib}GiB"}
 
-        log.info("Memuat %s (4bit=%s, adapter=%s)", settings.base_model_id, settings.load_4bit, punya_adapter)
+        log.info("Memuat %s (4bit=%s, adapter=%s, cpu_offload=%s)",
+                 settings.base_model_id, settings.load_4bit, punya_adapter, settings.cpu_offload)
         try:
             tok = AutoTokenizer.from_pretrained(str(adapter) if punya_adapter else settings.base_model_id)
             model = AutoModelForCausalLM.from_pretrained(
-                settings.base_model_id, quantization_config=quant, torch_dtype=dtype, device_map={"": 0}
+                settings.base_model_id, quantization_config=quant, torch_dtype=dtype,
+                device_map=device_map, max_memory=max_memory, low_cpu_mem_usage=True,
             )
             if punya_adapter:
                 from peft import PeftModel
