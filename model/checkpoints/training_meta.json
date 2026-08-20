@@ -1,5 +1,5 @@
 {
-  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "base_model": "Qwen/Qwen2.5-3B-Instruct",
   "lora": {
     "r": 16,
     "alpha": 32,

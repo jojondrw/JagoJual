@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="JAGOJUAL_", env_file=".env", extra="ignore")
 
     mode: str = "mock"  # "mock" (tanpa GPU) | "local" (LLM + adapter LoRA)
-    base_model_id: str = "Qwen/Qwen2.5-7B-Instruct"
+    base_model_id: str = "Qwen/Qwen2.5-3B-Instruct"
     adapter_path: str = "../model/checkpoints"
     cors_origins: str = "http://localhost:3000"
 

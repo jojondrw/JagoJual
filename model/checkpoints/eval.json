@@ -3,36 +3,36 @@
     "n_contoh": 215,
     "coach_turn": {
       "n": 185,
-      "akurasi_teknik": 0.7676,
-      "macro_f1_teknik": 0.76,
+      "akurasi_teknik": 0.4595,
+      "macro_f1_teknik": 0.4284,
       "f1_per_teknik": {
-        "atasi_keberatan": 0.7324,
-        "closing": 0.8966,
-        "gali_kebutuhan": 0.6739,
-        "presentasi_manfaat": 0.8889,
-        "sapa_rapport": 0.3684,
-        "upsell": 1.0
+        "atasi_keberatan": 0.2381,
+        "closing": 0.7692,
+        "gali_kebutuhan": 0.4737,
+        "presentasi_manfaat": 0.3396,
+        "sapa_rapport": 0.0,
+        "upsell": 0.75
       },
-      "akurasi_kualitas": 0.827
+      "akurasi_kualitas": 0.6703
     },
     "coach_sesi": {
       "n": 30,
-      "json_valid_pct": 100.0,
-      "mae_skor_total": 14.23,
-      "mae_skor_per_teknik": 50.6
+      "json_valid_pct": 96.7,
+      "mae_skor_total": 11.76,
+      "mae_skor_per_teknik": 28.31
     }
   },
   "fine-tuned": {
     "n_contoh": 215,
     "coach_turn": {
       "n": 185,
-      "akurasi_teknik": 1.0,
-      "macro_f1_teknik": 1.0,
+      "akurasi_teknik": 0.9946,
+      "macro_f1_teknik": 0.9948,
       "f1_per_teknik": {
-        "atasi_keberatan": 1.0,
+        "atasi_keberatan": 0.9859,
         "closing": 1.0,
         "gali_kebutuhan": 1.0,
-        "presentasi_manfaat": 1.0,
+        "presentasi_manfaat": 0.9831,
         "sapa_rapport": 1.0,
         "upsell": 1.0
       },
@@ -41,8 +41,8 @@
     "coach_sesi": {
       "n": 30,
       "json_valid_pct": 100.0,
-      "mae_skor_total": 3.57,
-      "mae_skor_per_teknik": 0.83
+      "mae_skor_total": 4.97,
+      "mae_skor_per_teknik": 1.22
     }
   }
 }

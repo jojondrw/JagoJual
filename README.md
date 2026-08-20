@@ -29,20 +29,21 @@ butuh pemahaman bahasa yang tidak bisa dicocokkan kata kunci. Itulah komponen ya
 
 Adapter kami diuji melawan base model yang sama pada test set yang sama:
 
-| Metrik (mode Pelatih) | Base Qwen2.5-7B | **Fine-tuned** |
+| Metrik (mode Pelatih) | Base Qwen2.5-3B | **Fine-tuned** |
 |---|---|---|
-| Akurasi label teknik | 76,8% | **100%** |
-| Macro-F1 teknik | 0,76 | **1,0** |
-| Akurasi label kualitas (baik/lemah) | 82,7% | **100%** |
-| MAE skor sesi (0 sampai 100) | 14,23 | **3,57** |
-| MAE skor per-teknik | 50,6 | **0,83** |
+| Akurasi label teknik | 46,0% | **99,5%** |
+| Macro-F1 teknik | 0,43 | **0,99** |
+| Akurasi label kualitas (baik/lemah) | 67,0% | **100%** |
+| MAE skor sesi (0 sampai 100) | 11,76 | **4,97** |
+| MAE skor per-teknik | 28,31 | **1,22** |
 
-> **Catatan jujur soal angka 100%.** Nilai sempurna ini mencerminkan **konsistensi data
-> sintetik** kami: pola pelabelannya teratur sehingga tugas sangat terpelajari. Pada
-> percakapan dunia nyata yang lebih berantakan, kami memperkirakan akurasi lebih rendah.
-> Yang valid sebagai bukti adalah **peningkatan relatifnya** (76% ke 100%, MAE 14,23 ke 3,57):
-> fine-tuning jelas mengajari model tugas yang tidak dikuasai base model. Validasi dengan
-> transkrip asli adalah langkah pengembangan berikutnya.
+> **Catatan jujur.** Base 3B yang belum diadaptasi hanya benar 46,0% menebak teknik jualan;
+> setelah fine-tuning naik ke 99,5%. Skor mendekati sempurna ini mencerminkan **konsistensi
+> data sintetik** kami (tugas mudah dipelajari), jadi pada percakapan dunia nyata yang lebih
+> bervariasi kami memperkirakan angkanya lebih rendah. Yang valid sebagai bukti adalah
+> **lompatan relatifnya** (46,0% ke 99,5%, MAE 11,76 ke 4,97): fine-tuning mengubah model kecil
+> yang lemah menjadi penilai yang andal, cukup ringan untuk berjalan di GPU 6GB. Validasi
+> dengan transkrip asli adalah langkah pengembangan berikutnya.
 
 ---
 
@@ -57,7 +58,7 @@ Adapter kami diuji melawan base model yang sama pada test set yang sama:
 +----------------------+                    +-----------------------+  |
                                                                        v
                                                   +----------------------------------+
-                                                  | MODE=local: Qwen2.5-7B (4-bit)    |
+                                                  | MODE=local: Qwen2.5-3B (4-bit)    |
                                                   |   + adapter LoRA fine-tuned        |
                                                   | MODE=mock : heuristik (tanpa AI)   |
                                                   +----------------------------------+
@@ -89,7 +90,7 @@ keluaran model asli.
 
 Dikembangkan & didemokan di **RTX 4050 6GB** (4-bit). Adapter LoRA sudah ada di `model/checkpoints/`.
 
-**Python 3.10 atau 3.11** — torch/bitsandbytes belum punya wheel untuk 3.12+. Cek dengan
+**Python 3.10 atau 3.11**: torch/bitsandbytes belum punya wheel untuk 3.12+. Cek dengan
 `python --version`; kalau lebih baru, pakai interpreter 3.11 terpisah (`py -3.11 -m venv .venv`).
 
 ```bash
@@ -99,7 +100,7 @@ pip install -r requirements.txt -r requirements-model.txt
 pip install torch --index-url https://download.pytorch.org/whl/cu121 --force-reinstall   # wajib, atau torch kepasang versi CPU
 ```
 
-Cek kritis sebelum lanjut — kalau salah satu gagal, jangan lanjut:
+Cek kritis sebelum lanjut, kalau salah satu gagal, jangan lanjut:
 ```bash
 python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))"   # harus True + nama GPU
 python -c "import bitsandbytes"                                                              # harus tanpa error
@@ -109,15 +110,16 @@ python -c "import bitsandbytes"                                                 
 JAGOJUAL_MODE=local PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True uvicorn app.main:app
 ```
 
-Bobot base (~15 GB, fp16) diunduh dari Hugging Face saat request pertama masuk (pemuatan
+Bobot base (~6 GB, fp16) diunduh dari Hugging Face saat request pertama masuk (pemuatan
 malas, bukan saat startup), lalu dikuantisasi ke 4-bit saat dimuat ke memori. Model dimuat
 **sekali** ke proses. **Tidak ada training, auto-tuning, atau feedback loop saat demo**;
 parameter statis sesuai batasan MVP rulebook.
 
-**VRAM 6GB itu pas-pasan** — di GPU sekelas RTX 4050, terukur ~5,6–5,9 GB terpakai saat
-generate, sisa headroom cuma ~250–500 MB. Wajib set `PYTORCH_CUDA_ALLOC_CONF` di atas
-(tanpa itu, fragmentasi memori CUDA bisa bikin proses mati mendadak walau VRAM sebenarnya
-cukup), dan tutup Chrome/app berat GPU lain **sebelum** start backend, bukan sesudahnya.
+**Muat lega di 6GB.** Model 3B 4-bit hanya memakai sekitar 2,5 sampai 3 GB VRAM saat
+generate, jadi di GPU 6GB (mis. RTX 4050) headroom-nya longgar dan stabil, tidak seperti
+7B yang mepet. Untuk berjaga, `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` pada
+perintah di atas mengurangi fragmentasi memori CUDA; menutup aplikasi GPU berat lain
+sebelum start backend tetap dianjurkan.
 
 Kalau model/adapter gagal dimuat, API menjawab **503 dengan sebab yang jelas** dan **tidak**
 diam-diam berpindah ke mock. Hasil mock bukan penilaian AI, jadi menyajikannya seolah
@@ -155,7 +157,7 @@ rubric.py                 -> target skor sesi deterministik dari label emas
 4_evaluate.py             -> eval.json                    (adapter vs base)
 ```
 
-- **Base:** Qwen2.5-7B-Instruct (Apache-2.0) + LoRA r=16. Dilatih di Kaggle (T4, 4-bit QLoRA).
+- **Base:** Qwen2.5-3B-Instruct (Apache-2.0) + LoRA r=16. Dilatih di Kaggle (T4, 4-bit QLoRA).
 - **Data:** sintetik & di-ground ke taksonomi teknik/keberatan/persona (`data/README.md`).
 - Runbook lengkap: [`model/training/TRAINING.md`](model/training/TRAINING.md).
 
@@ -174,7 +176,7 @@ JagoJual/
 │   ├── app/
 │   │   ├── main.py        FastAPI: /api/scenarios, /api/chat, /api/evaluate
 │   │   ├── prompts.py     prompt inferensi, KEMBAR dengan model/training/prompts.py
-│   │   ├── llm.py         MODE=local: Qwen2.5 4-bit + adapter LoRA
+│   │   ├── llm.py         MODE=local: Qwen2.5-3B 4-bit + adapter LoRA
 │   │   ├── mock.py        MODE=mock: heuristik kata kunci (bukan AI)
 │   │   └── scenarios.py   6 skenario latihan (persona pakai label taksonomi)
 │   └── tests/             22 tes, jalan tanpa GPU
