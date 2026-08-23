@@ -11,9 +11,9 @@
 > di MODE=local.
 
 ## Ringkasan
-- **Base:** `Qwen/Qwen2.5-7B-Instruct` (Apache-2.0) · cadangan `Qwen2.5-3B-Instruct`
+- **Base:** `Qwen/Qwen2.5-3B-Instruct` (Apache-2.0) — dipilih karena inferensinya muat di GPU demo 6 GB
 - **Metode:** QLoRA (4-bit) via `peft` + `trl`
-- **Platform:** Kaggle (P100 16GB / T4×2, ~30 jam/minggu gratis)
+- **Platform:** Kaggle (T4 / P100, ~30 jam/minggu gratis)
 - **Fokus fine-tune:** mode **Pelatih** (penilaian teknik). Role-play andalkan base.
 
 ## Status skrip
@@ -95,8 +95,8 @@ python 3_finetune_qlora.py \
     --val   ../../data/sft/val.jsonl \
     --out   ../checkpoints
 
-# cadangan bila 7B terlalu berat/lambat di GPU demo:
-python 3_finetune_qlora.py --base-model Qwen/Qwen2.5-3B-Instruct ... 
+# base model default sudah Qwen2.5-3B-Instruct, sama dengan yang dipakai backend.
+# Jangan ganti tanpa melatih ulang: adapter tidak bisa dipasang ke base beda ukuran.
 
 # 2) buktikan fine-tune memberi nilai tambah (angka ini masuk proposal)
 python 4_evaluate.py --test ../../data/sft/test.jsonl \

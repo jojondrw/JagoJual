@@ -1,6 +1,6 @@
 """Uji bagian MODE=local yang tidak butuh GPU: prompt & normalisasi keluaran model.
 
-Pemuatan model sengaja tidak diuji di sini — itu butuh GPU dan bobot 7B. Yang diuji
+Pemuatan model sengaja tidak diuji di sini — itu butuh GPU dan bobot base 3B. Yang diuji
 adalah lapisan yang paling mungkin salah diam-diam: format prompt (kontrak dengan data
 latih) dan pembersihan keluaran model sebelum masuk ke respons API.
 """

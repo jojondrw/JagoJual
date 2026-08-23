@@ -65,13 +65,21 @@
 
 ## 5. Model & Fine-tuning (KEPUTUSAN)
 
+> **Hasil akhir: `Qwen2.5-3B-Instruct`.** Dokumen ini ditulis di awal proyek dan
+> merencanakan 7B sebagai pilihan utama. Saat dicoba di GPU demo (RTX 4050 6GB),
+> 7B 4-bit memakai VRAM terlalu mepet sehingga generate-nya lambat dan rawan OOM,
+> sementara 3B 4-bit cuma butuh sekitar 2,5–3 GB dan jalan stabil. Cadangan itu
+> akhirnya jadi pilihan utama, dan itulah yang dilatih serta di-commit di
+> `model/checkpoints/`. Bagian di bawah dibiarkan apa adanya sebagai catatan
+> pertimbangan awal.
+
 ### Pilihan model
-- **Utama: `Qwen2.5-7B-Instruct`** — Indonesia bagus, lisensi **Apache-2.0** (aman untuk lomba), muat 4-bit di 4050.
-- **Cadangan ringan: `Qwen2.5-3B-Instruct`** — kalau 7B terlalu lambat di 4050 saat demo.
+- **Rencana awal: `Qwen2.5-7B-Instruct`** — Indonesia bagus, lisensi **Apache-2.0** (aman untuk lomba), muat 4-bit di 4050.
+- **Cadangan ringan: `Qwen2.5-3B-Instruct`** — kalau 7B terlalu lambat di 4050 saat demo. **Ini yang akhirnya dipakai.**
 - **Alternatif fokus-ID:** SEA-LION v3 / Sahabat-AI (cek lisensi dulu).
 
 ### Kenapa LoRA + open-weights (bukan API/IndoBERT)
-- **Akurasi:** LLM 7B mampu *reasoning* (menilai kualitas jualan) — jauh di atas classifier kecil.
+- **Akurasi:** LLM instruct mampu *reasoning* (menilai kualitas jualan) — jauh di atas classifier kecil.
 - **Patuh aturan:** "Model wajib di fine tune" → LoRA = fine-tune sungguhan milik tim.
 - **Verifiable & lokal:** adapter di-commit ke repo → juri bisa periksa & jalankan via docker. Tak bergantung API berbayar/koneksi.
 - **Gratis:** dilatih di Kaggle (16GB), disajikan di 4050.
@@ -206,7 +214,7 @@ JagoJual/
 
 1. **M0 – Setup:** repo, docker skeleton, pilih nama final, siapkan akun Kaggle (verifikasi HP).
 2. **M1 – Data:** generate ~300 dialog sintetik (otomotif + elektronik, grounded) + validasi manusia + format SFT.
-3. **M2 – Fine-tune (Kaggle):** QLoRA Qwen2.5-7B fokus mode Pelatih, evaluasi vs base, simpan adapter → commit repo.
+3. **M2 – Fine-tune (Kaggle):** QLoRA Qwen2.5-3B fokus mode Pelatih, evaluasi vs base, simpan adapter → commit repo.
 4. **M3 – Backend:** endpoint sinkron, load base+adapter di 4050, mode Pelanggan & Pelatih, mock mode.
 5. **M4 – Frontend:** 2 layar (pilih bidang+skenario → role-play), ringkasan skor akhir sesi.
 6. **M5 – Polish:** README, seed skenario, video PoW, proposal.
@@ -218,7 +226,7 @@ JagoJual/
 | Risiko | Mitigasi |
 |---|---|
 | Label dari LLM → model "hanya sepandai LLM" | Grounding framework sales + validasi manusia 10–15% + transkrip asli bila sempat |
-| 7B lambat/OOM di 4050 (6GB) saat demo | Pakai 4-bit + konteks pendek + jawaban ringkas; cadangan turun ke 3B |
+| 7B lambat/OOM di 4050 (6GB) saat demo | Terbukti terjadi. Turun ke 3B 4-bit (~2,5–3 GB VRAM), plus konteks pendek & jawaban ringkas |
 | Sesi Kaggle mati sebelum training selesai | Checkpoint berkala + simpan adapter ke HF Hub; dataset kecil → training singkat |
 | Model/GPU tak siap saat panitia menjalankan | **Mock mode** (balasan dari skrip) agar app tetap jalan lokal |
 | Kelas tak seimbang di data sintetik | Kontrol distribusi saat generate + weighting saat SFT |
@@ -229,7 +237,7 @@ JagoJual/
 
 - **Nama kerja:** JagoJual (boleh diganti kapan saja).
 - **Bidang:** Otomotif (hero) + Elektronik.
-- **Model:** Qwen2.5-7B-Instruct (Apache-2.0), cadangan 3B bila 4050 lambat. ✅
+- **Model:** Qwen2.5-3B-Instruct (Apache-2.0), turun dari rencana awal 7B karena VRAM 4050. ✅
 - **Arsitektur:** 1 LLM fine-tuned (LoRA), fokus mode Pelatih; role-play andalkan base.
 - **Training:** Kaggle (QLoRA) → adapter di repo → demo di 4050 + mock mode.
 - **Dataset:** ~300 dialog sintetik (150/bidang), grounded + validasi manusia.
@@ -240,6 +248,6 @@ JagoJual/
 
 ## Referensi
 
-- Base model: https://huggingface.co/Qwen/Qwen2.5-7B-Instruct (Apache-2.0) · cadangan https://huggingface.co/Qwen/Qwen2.5-3B-Instruct
+- Base model: https://huggingface.co/Qwen/Qwen2.5-3B-Instruct (Apache-2.0)
 - Fine-tuning: `peft` + `trl` (QLoRA) di Kaggle (P100 16GB / T4×2, ~30 jam/minggu)
 - Framework grounding generate dialog: SPIN Selling, AIDA, needs-based selling, objection handling

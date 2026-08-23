@@ -4,7 +4,7 @@ Panduan langkah demi langkah dari **dataset dialog** sampai **adapter LoRA yang 
 backend**. Ikuti berurutan; tiap langkah punya cara memastikan hasilnya benar sebelum lanjut.
 
 > **Kenapa di Kaggle, bukan lokal?** GPU demo (RTX 4050, 6 GB) cukup untuk *inferensi*
-> 4-bit tapi tidak untuk *training* 7B. Kaggle memberi P100 16 GB / T4×2 gratis ~30 jam
+> 4-bit tapi tidak untuk *training*. Kaggle memberi P100 16 GB / T4×2 gratis ~30 jam
 > per minggu. Training dikerjakan sekali di sana, hasilnya (adapter, puluhan MB) dibawa
 > pulang ke repo.
 >
@@ -42,7 +42,7 @@ angka untuk proposal + backend MODE=local
    cara termudah membawanya ke Kaggle adalah meng-clone repo.
 
 **Cek kuota sebelum mulai.** Kuota GPU Kaggle mingguan, dan reset tiap Sabtu 00:00 UTC.
-Training 300 dialog ≈ 1–2 jam di P100; sisakan kuota untuk evaluasi.
+Training 300 dialog ≈ 1 jam di T4/P100; sisakan kuota untuk evaluasi.
 
 ---
 
@@ -138,30 +138,28 @@ Default yang dipakai dan alasannya:
 
 | Parameter | Nilai | Kenapa |
 |---|---|---|
-| base model | `Qwen/Qwen2.5-7B-Instruct` | Apache-2.0 (aman untuk lomba), Bahasa Indonesia bagus |
-| kuantisasi | 4-bit NF4 + double quant | supaya 7B muat di 16 GB saat training |
+| base model | `Qwen/Qwen2.5-3B-Instruct` | Apache-2.0 (aman untuk lomba), Bahasa Indonesia bagus, muat inferensi 4-bit di GPU demo 6 GB |
+| kuantisasi | 4-bit NF4 + double quant | menekan VRAM saat training, dan wajib untuk inferensi di GPU demo 6 GB |
 | LoRA | `r=16, alpha=32, dropout=0.05` | kapasitas cukup untuk keluaran terstruktur, adapter tetap kecil |
 | target modules | semua proyeksi attention + MLP | melatih MLP juga membantu tugas format JSON |
 | lr / scheduler | `2e-4` / cosine | lazim untuk QLoRA |
-| epoch | 3 | dataset kecil; lebih dari ini mudah overfit |
+| epoch | 1 | dataset kecil dan polanya konsisten; lebih dari ini mudah overfit |
 | batch efektif | 8 (1 × grad-accum 8) | menahan pemakaian VRAM |
 | optimizer | `paged_adamw_8bit` | hemat memori, tahan lonjakan |
 
 **Pantau `loss`.** Turun lalu mendatar = wajar. Kalau `eval_loss` mulai naik sementara
-`train_loss` terus turun, itu overfit — kurangi epoch jadi 2.
+`train_loss` terus turun, itu overfit — potong lewat `--max-steps`.
 
 Selesai training, folder `../checkpoints` berisi adapter + `training_meta.json`
 (catatan hyperparameter & statistik data — jangan dihapus, itu jejak reproduksi kamu).
 
-### Kalau 7B terlalu berat
+### Base model training dan backend harus sama
 
-```python
-!python 3_finetune_qlora.py --base-model Qwen/Qwen2.5-3B-Instruct ...
-```
-
-Wajib **konsisten**: kalau training pakai 3B, backend juga harus
-`JAGOJUAL_BASE_MODEL_ID=Qwen/Qwen2.5-3B-Instruct`. Adapter LoRA **tidak bisa** dipasang
-ke base model yang berbeda ukuran — dimensi matriksnya tidak cocok dan akan error saat load.
+Adapter LoRA **tidak bisa** dipasang ke base model yang berbeda ukuran — dimensi
+matriksnya tidak cocok dan akan error saat load. Adapter yang sekarang ada di
+`model/checkpoints/` dilatih di atas `Qwen/Qwen2.5-3B-Instruct`, jadi backend juga
+harus `JAGOJUAL_BASE_MODEL_ID=Qwen/Qwen2.5-3B-Instruct` (sudah jadi default di
+`app/config.py`). Kalau suatu saat base-nya diganti, ganti keduanya dan latih ulang.
 
 ---
 
@@ -209,7 +207,7 @@ Dari Kaggle, unduh folder `model/checkpoints` lewat panel *Output*, lalu di mesi
 
 ```bash
 git add model/checkpoints
-git commit -m "feat: tambah adapter LoRA hasil fine-tune QLoRA Qwen2.5-7B"
+git commit -m "feat: tambah adapter LoRA hasil fine-tune QLoRA Qwen2.5-3B"
 git push
 ```
 
