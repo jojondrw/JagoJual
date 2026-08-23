@@ -145,9 +145,9 @@ Target **~150 dialog per bidang** × 2 = **~300 dialog** → beberapa ribu conto
 ### Cara membuat & jaga mutu
 1. **Matriks skenario:** vertikal × produk × jenis keberatan × persona.
 2. **Generate:** LLM buat dialog per sel, **di-grounding ke framework sales nyata** (SPIN Selling, AIDA, needs-based selling, skrip objection-handling), sekaligus melabeli tiap turn. Buat juga versi "sales lemah" agar model belajar bedanya.
-3. **Validasi manusia:** spot-check 10–15% oleh **kenalan berpengalaman sales** (sudah tersedia), koreksi label, seimbangkan kelas. Cantumkan peran validator di proposal (nilai plus Metodologi).
+3. **Validasi otomatis:** tiap dialog dicek terhadap schema dan aturan bisnis (label per pembicara, kehadiran keberatan utama, distribusi kelas) sebelum masuk dataset.
 
-**Kejujuran (ditulis di proposal):** label awal dari LLM → risiko "model hanya sepandai LLM-nya". Mitigasi: grounding + validasi manusia + (bila sempat) transkrip role-play asli. Ini bernilai plus di kriteria Metodologi (15%).
+**Yang belum kami kerjakan.** Rencana awal mencakup spot-check sebagian dialog oleh praktisi sales dan penambahan seed dari transkrip percakapan nyata. Keduanya **tidak sempat dijalankan** di tahap penyisihan, jadi seluruh 300 dialog berstatus `divalidasi_manusia: false` kecuali dua contoh tulisan tangan. Konsekuensinya jujur kami akui: keragaman bahasanya masih terikat pola template, dan angka evaluasi yang tinggi ikut mencerminkan keteraturan itu.
 
 ---
 
@@ -213,7 +213,7 @@ JagoJual/
 ## 10. Tahapan Kerja (Draft)
 
 1. **M0 – Setup:** repo, docker skeleton, pilih nama final, siapkan akun Kaggle (verifikasi HP).
-2. **M1 – Data:** generate ~300 dialog sintetik (otomotif + elektronik, grounded) + validasi manusia + format SFT.
+2. **M1 – Data:** generate ~300 dialog sintetik (otomotif + elektronik, grounded) + validasi otomatis + format SFT.
 3. **M2 – Fine-tune (Kaggle):** QLoRA Qwen2.5-3B fokus mode Pelatih, evaluasi vs base, simpan adapter → commit repo.
 4. **M3 – Backend:** endpoint sinkron, load base+adapter di 4050, mode Pelanggan & Pelatih, mock mode.
 5. **M4 – Frontend:** 2 layar (pilih bidang+skenario → role-play), ringkasan skor akhir sesi.
@@ -225,7 +225,7 @@ JagoJual/
 
 | Risiko | Mitigasi |
 |---|---|
-| Label dari LLM → model "hanya sepandai LLM" | Grounding framework sales + validasi manusia 10–15% + transkrip asli bila sempat |
+| Label bergantung pada satu generator | Grounding ke framework sales + validasi otomatis schema/aturan bisnis. Validasi praktisi dan transkrip asli belum sempat, tercatat sebagai batasan |
 | 7B lambat/OOM di 4050 (6GB) saat demo | Terbukti terjadi. Turun ke 3B 4-bit (~2,5–3 GB VRAM), plus konteks pendek & jawaban ringkas |
 | Sesi Kaggle mati sebelum training selesai | Checkpoint berkala + simpan adapter ke HF Hub; dataset kecil → training singkat |
 | Model/GPU tak siap saat panitia menjalankan | **Mock mode** (balasan dari skrip) agar app tetap jalan lokal |
@@ -240,8 +240,8 @@ JagoJual/
 - **Model:** Qwen2.5-3B-Instruct (Apache-2.0), turun dari rencana awal 7B karena VRAM 4050. ✅
 - **Arsitektur:** 1 LLM fine-tuned (LoRA), fokus mode Pelatih; role-play andalkan base.
 - **Training:** Kaggle (QLoRA) → adapter di repo → demo di 4050 + mock mode.
-- **Dataset:** ~300 dialog sintetik (150/bidang), grounded + validasi manusia.
-- **Validasi label:** ✅ tersedia kenalan berpengalaman sales.
+- **Dataset:** ~300 dialog sintetik (150/bidang), grounded + validasi otomatis.
+- **Validasi label:** otomatis (schema + aturan bisnis). Validasi praktisi belum dijalankan.
 - **Dibuang:** kepala emosi, auxiliary data publik, bidang finansial, fine-tune role-play, feedback per-giliran.
 
 ---

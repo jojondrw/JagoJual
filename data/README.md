@@ -1,8 +1,9 @@
 # Dataset — Dialog Jualan Sintetik (JagoJual)
 
 Dataset dialog jualan toko offline berbahasa Indonesia untuk melatih **mode Pelatih**
-(penilaian teknik jualan) dan menyeed **mode Pelanggan** (role-play). Dibuat tim; sintetik +
-di-*grounding* framework sales nyata + validasi manusia. Lihat `PLAN.md §6` untuk rasional lengkap.
+(penilaian teknik jualan) dan menyeed **mode Pelanggan** (role-play). Dibuat tim; sintetik, di-*grounding* ke
+framework sales nyata, dan divalidasi otomatis terhadap schema serta aturan bisnis.
+Lihat [`PLAN.md`](../PLAN.md) untuk rasional lengkap.
 
 ## Kenapa sintetik?
 
@@ -71,7 +72,13 @@ Skrip di [`../model/training/`](../model/training/). Ringkas:
 # 1) rencanakan sel seimbang (~150/bidang = 300 dialog)
 python build_scenario_matrix.py --per-bidang 150
 
-# 2) generate (OpenAI-compatible; set env dulu). Ulangi dengan model berbeda utk MULTI-LLM.
+# 2a) generator lokal deterministik — INI yang menghasilkan 300 dialog di data/dialogs/
+#     (grounding.generator = "grounded-local-v2"). Tanpa API, siapa pun bisa mengulang
+#     dan hasilnya sama.
+python 1_generate_local.py
+
+# 2b) jalur alternatif lewat LLM eksternal (OpenAI-compatible). Ada di repo tapi TIDAK
+#     dipakai untuk dataset yang dikirimkan.
 export JAGO_LLM_BASE_URL=...   JAGO_LLM_API_KEY=...   JAGO_LLM_MODEL=...
 python 1_generate_data.py --dry-run     # cek prompt
 python 1_generate_data.py --limit 5     # smoke test
@@ -86,18 +93,33 @@ python 2_prepare_sft.py
 
 ## Jaga mutu
 
-1. **Matriks terkontrol** — distribusi bidang/topik/persona diseimbangkan sejak awal.
-2. **Multi-LLM** — generate dengan >1 model untuk kurangi bias satu model (jejak di `grounding.generator`).
-3. **Validasi otomatis** — schema + label per-speaker + kehadiran keberatan utama.
-4. **Validasi manusia** — spot-check 10–15% oleh kenalan sales berpengalaman; koreksi label; set
-   `grounding.divalidasi_manusia = true`.
-5. **Seed transkrip asli** (bila tersedia) — role-play/rekaman nyata yang ditranskrip & dianonimkan,
-   `grounding.generator = "transkrip-asli"`.
+**Yang sudah dijalankan:**
+
+1. **Matriks terkontrol** — distribusi bidang, topik, persona, dan keberatan diseimbangkan sejak
+   awal lewat `build_scenario_matrix.py`, bukan diserahkan ke kebetulan saat generate.
+2. **Grounding eksplisit** — tiap dialog dibangun mengikuti kerangka SPIN, AIDA, FAB, dan pola
+   objection-handling; jejaknya tersimpan di `grounding.framework` tiap berkas.
+3. **Validasi otomatis** — schema, label per pembicara, dan kehadiran keberatan utama dicek untuk
+   seluruh 300 dialog sebelum masuk dataset.
+
+**Yang belum dijalankan, dan akibatnya:**
+
+4. **Validasi praktisi** — rencananya sebagian dialog di-spot-check oleh orang berpengalaman jualan
+   lalu labelnya dikoreksi. Ini **tidak sempat kami kerjakan**. Silakan cek berkas mana pun:
+   `grounding.divalidasi_manusia` bernilai `false` untuk 298 dari 300 dialog; yang `true` hanya dua
+   contoh tulisan tangan.
+5. **Seed transkrip asli** — belum ada. Seluruh dialog murni bangkitan.
+
+Akibatnya keragaman bahasa dataset ini masih terikat pola template. Itu sebabnya angka evaluasi
+model kami tinggi, dan kenapa angka itu sebaiknya dibaca sebagai lompatan relatif terhadap base
+model, bukan sebagai perkiraan performa di percakapan dunia nyata.
 
 ## Kejujuran, lisensi & etika (untuk proposal)
 
-- Label awal dari LLM → risiko "model hanya sepandai LLM-nya". Mitigasi: grounding framework +
-  validasi manusia + seed transkrip asli. (Nilai plus kriteria Metodologi.)
+- Label berasal dari satu generator yang kami tulis sendiri, jadi ada risiko model hanya sepandai
+  aturan generator itu. Yang menahannya sekarang: grounding ke framework sales dan validasi
+  otomatis. Yang seharusnya menahannya lebih jauh, yaitu validasi praktisi dan transkrip asli,
+  belum ada.
 - Data sintetik dibuat tim → bebas dipakai untuk lomba. Transkrip asli **wajib dianonimkan**
   (tanpa nama, nomor, identitas) sebelum masuk repo.
 - Framework grounding (SPIN/AIDA/FAB) dipakai sebagai *acuan teknik*, bukan penyalinan teks.

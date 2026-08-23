@@ -214,6 +214,7 @@ inovasi ≤5 menit (public), proposal PDF ≤20 halaman.
 | Hal | Status / dampak |
 |---|---|
 | 6 skenario hardcoded, sementara `scenario_matrix.json` punya 300 sel | Dataset besar, app menawarkan skenario tulisan tangan. Sengaja untuk MVP; scenario generator adalah pengembangan lanjutan. |
+| Dataset sintetik belum divalidasi praktisi sales | 298 dari 300 dialog berstatus `divalidasi_manusia: false`. Grounding dan validasi otomatis sudah jalan, tapi tanpa koreksi manusia keragaman bahasanya terikat pola template. Ini sebab utama angka evaluasi kami tinggi, dan alasan kami menekankan lompatan relatif terhadap base model, bukan angka absolutnya. |
 | `npm audit` menyisakan temuan high pada Next.js (tertutup hanya dengan Next 16) | Diputuskan tetap di Next 14.2.35. Permukaan yang terdampak (middleware, `next/image`, server actions) tidak dipakai sama sekali, dan app hanya dijalankan di localhost saat penilaian. Lompat ke Next 16 menjelang tenggat berisiko merusak jalur yang justru dipakai juri. Peningkatan versi masuk rencana pasca-penyisihan. |
 
 ---
