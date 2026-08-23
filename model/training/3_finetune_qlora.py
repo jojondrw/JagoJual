@@ -28,7 +28,7 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-DEFAULT_BASE = "Qwen/Qwen2.5-7B-Instruct"
+DEFAULT_BASE = "Qwen/Qwen2.5-3B-Instruct"
 
 TARGET_MODULES = ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
 
@@ -142,7 +142,7 @@ def main() -> int:
         args.base_model,
         quantization_config=quant,
         torch_dtype=dtype,
-        device_map={"": 0},  # taruh semua di GPU 0 (cukup untuk 7B 4-bit di T4/P100 16GB)
+        device_map={"": 0},  # taruh semua di GPU 0 (3B 4-bit muat longgar di T4/P100 16GB)
     )
     model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
 

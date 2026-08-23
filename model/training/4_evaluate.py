@@ -31,7 +31,7 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-DEFAULT_BASE = "Qwen/Qwen2.5-7B-Instruct"
+DEFAULT_BASE = "Qwen/Qwen2.5-3B-Instruct"
 MAX_NEW_TOKENS = {"coach_turn": 48, "coach_sesi": 512}
 
 
