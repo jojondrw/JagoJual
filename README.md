@@ -150,7 +150,7 @@ implementasi AI pada inferensi berparameter statis).
 
 ```
 build_scenario_matrix.py  -> data/scenario_matrix.json   (300 sel skenario)
-1_generate_data.py        -> data/dialogs/*.json          (301 dialog berlabel)
+1_generate_data.py        -> data/dialogs/*.json          (300 dialog berlabel)
 rubric.py                 -> target skor sesi deterministik dari label emas
 2_prepare_sft.py          -> data/sft/*.jsonl             (split 80/10/10, tidak di-commit)
 3_finetune_qlora.py       -> model/checkpoints/           (adapter LoRA, di-commit)
@@ -184,7 +184,7 @@ JagoJual/
 ├── model/
 │   ├── training/          OFFLINE (Kaggle): pipeline data, fine-tune, eval
 │   └── checkpoints/       adapter LoRA fine-tuned + eval.json (bukti), committed
-└── data/                  taksonomi, matriks skenario, 301 dialog berlabel
+└── data/                  taksonomi, matriks skenario, 300 dialog berlabel
 ```
 
 Dokumen pendukung: [`PLAN.md`](PLAN.md) (desain & rasional lengkap, pemetaan ke kriteria penilaian) ·
@@ -197,7 +197,7 @@ Dokumen pendukung: [`PLAN.md`](PLAN.md) (desain & rasional lengkap, pemetaan ke 
 | Tahap | Status |
 |---|---|
 | M0: Scaffold (mock mode jalan) | ✅ |
-| M1: Pipeline dataset + 301 dialog berlabel | ✅ |
+| M1: Pipeline dataset + 300 dialog berlabel | ✅ |
 | M2: Fine-tune QLoRA + evaluasi (Kaggle) | ✅ adapter & eval di-commit |
 | M3: Integrasi LLM lokal (MODE=local) | ✅ |
 | M4: Polish frontend + voice opsional | ✅ |
