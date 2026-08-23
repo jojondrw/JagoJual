@@ -201,7 +201,8 @@ Dokumen pendukung: [`PLAN.md`](PLAN.md) (desain & rasional lengkap, pemetaan ke 
 | M2: Fine-tune QLoRA + evaluasi (Kaggle) | ✅ adapter & eval di-commit |
 | M3: Integrasi LLM lokal (MODE=local) | ✅ |
 | M4: Polish frontend + voice opsional | ✅ |
-| M5: Proposal PDF + video PoW + video inovasi | ⬜ **in progress** |
+| M5: Proposal PDF | ✅ |
+| M5: Video Proof of Work + video inovasi | ⬜ perekaman selesai, voice-over & unggah menyusul |
 
 **Tenggat penyisihan: 25 Agustus 2026, 23.55 WIB**, batas commit/push terakhir *sekaligus*
 batas submisi berkas. Deliverable: link repo (public, README + docker compose), video Proof of
@@ -213,7 +214,7 @@ inovasi ≤5 menit (public), proposal PDF ≤20 halaman.
 | Hal | Status / dampak |
 |---|---|
 | 6 skenario hardcoded, sementara `scenario_matrix.json` punya 300 sel | Dataset besar, app menawarkan skenario tulisan tangan. Sengaja untuk MVP; scenario generator adalah pengembangan lanjutan. |
-| `npm audit` menyisakan temuan high pada Next.js (tertutup hanya dengan Next 16) | Ditunda: app jalan di localhost, tanpa middleware/`next/image`/server actions. Putuskan sebelum submisi. |
+| `npm audit` menyisakan temuan high pada Next.js (tertutup hanya dengan Next 16) | Diputuskan tetap di Next 14.2.35. Permukaan yang terdampak (middleware, `next/image`, server actions) tidak dipakai sama sekali, dan app hanya dijalankan di localhost saat penilaian. Lompat ke Next 16 menjelang tenggat berisiko merusak jalur yang justru dipakai juri. Peningkatan versi masuk rencana pasca-penyisihan. |
 
 ---
 
