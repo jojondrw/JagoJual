@@ -187,38 +187,23 @@ JagoJual/
 └── data/                  taksonomi, matriks skenario, 300 dialog berlabel
 ```
 
-Dokumen pendukung: [`PLAN.md`](PLAN.md) (desain & rasional lengkap, pemetaan ke kriteria penilaian) ·
+Dokumen pendukung: [`PLAN.md`](PLAN.md) (catatan desain: alasan di balik pilihan arsitektur, model, dan dataset) ·
 [`data/README.md`](data/README.md) (taksonomi label, cara data dibuat, etika & lisensi).
 
 ---
 
-## Status
+## Batasan yang kami ketahui
 
-| Tahap | Status |
-|---|---|
-| M0: Scaffold (mock mode jalan) | ✅ |
-| M1: Pipeline dataset + 300 dialog berlabel | ✅ |
-| M2: Fine-tune QLoRA + evaluasi (Kaggle) | ✅ adapter & eval di-commit |
-| M3: Integrasi LLM lokal (MODE=local) | ✅ |
-| M4: Polish frontend + voice opsional | ✅ |
-| M5: Proposal PDF | ✅ |
-| M5: Video Proof of Work + video inovasi | ⬜ perekaman selesai, voice-over & unggah menyusul |
+Bukan bug, melainkan keputusan sadar beserta konsekuensinya.
 
-**Tenggat penyisihan: 25 Agustus 2026, 23.55 WIB**, batas commit/push terakhir *sekaligus*
-batas submisi berkas. Deliverable: link repo (public, README + docker compose), video Proof of
-Work ≤7 menit (YouTube unlisted, **dilarang di-cut**, hanya fast-forward + voice over), video
-inovasi ≤5 menit (public), proposal PDF ≤20 halaman.
-
-### Utang teknis yang diketahui (bukan bug, hal yang mungkin ditanya juri)
-
-| Hal | Status / dampak |
+| Hal | Keputusan dan dampaknya |
 |---|---|
 | 6 skenario hardcoded, sementara `scenario_matrix.json` punya 300 sel | Dataset besar, app menawarkan skenario tulisan tangan. Sengaja untuk MVP; scenario generator adalah pengembangan lanjutan. |
 | Dataset sintetik belum divalidasi praktisi sales | 298 dari 300 dialog berstatus `divalidasi_manusia: false`. Grounding dan validasi otomatis sudah jalan, tapi tanpa koreksi manusia keragaman bahasanya terikat pola template. Ini sebab utama angka evaluasi kami tinggi, dan alasan kami menekankan lompatan relatif terhadap base model, bukan angka absolutnya. |
-| `npm audit` menyisakan temuan high pada Next.js (tertutup hanya dengan Next 16) | Diputuskan tetap di Next 14.2.35. Permukaan yang terdampak (middleware, `next/image`, server actions) tidak dipakai sama sekali, dan app hanya dijalankan di localhost saat penilaian. Lompat ke Next 16 menjelang tenggat berisiko merusak jalur yang justru dipakai juri. Peningkatan versi masuk rencana pasca-penyisihan. |
+| `npm audit` menyisakan temuan high pada Next.js (tertutup hanya dengan Next 16) | Diputuskan tetap di Next 14.2.35. Permukaan yang terdampak (middleware, `next/image`, server actions) tidak dipakai sama sekali, dan app hanya dijalankan di localhost. Lompat ke major version baru berisiko merusak jalur jalankan yang sudah stabil, jadi peningkatan versi kami tunda. |
 
 ---
 
-## Konvensi commit (Conventional Commits, wajib rulebook)
+## Konvensi commit (Conventional Commits)
 `feat:` fitur baru · `fix:` perbaikan bug · `refactor:` ubah struktur tanpa ubah fungsi · `docs:` dokumentasi
 · panduan: https://www.conventionalcommits.org

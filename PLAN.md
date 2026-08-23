@@ -1,7 +1,7 @@
 # PLAN — AIC COMPFEST 18 · AI Sales Trainer untuk Toko Offline
 
-> Dokumen ini adalah **rencana untuk direview**, belum implementasi.
-> Nama kerja: **JagoJual** (alternatif: SigapSales, PramuniagaAI, TokoCoach). Silakan pilih/ganti.
+> Catatan desain JagoJual: alasan di balik pilihan arsitektur, model, dan dataset.
+> Untuk cara menjalankan aplikasinya, lihat [`README.md`](README.md).
 
 ---
 
@@ -15,20 +15,7 @@
 
 ---
 
-## 2. Kenapa Ini "Baru" & Aman dari Tuduhan Non-orisinal
-
-| Aspek | Sera (yang di-copy) | StokCerdas (project AIC lama) | **JagoJual (baru)** |
-|---|---|---|---|
-| Domain | Onboarding asuransi | Forecasting stok ritel | **Pelatihan sales lintas industri** |
-| Inti AI | RAG + LLM API (tanpa fine-tune) | Time-series (Chronos) | **LLM open-weights fine-tuned (LoRA)** |
-| Interaksi | Tanya-jawab dokumen | Upload CSV → ramalan | **Role-play percakapan + scoring** |
-| Pengguna | Staf baru | Pemilik toko | **Sales otomotif / elektronik / finansial / dll** |
-
-**Strategi orisinalitas:** pakai **pola arsitektur** Sera/StokCerdas (Next.js + FastAPI + Docker Compose, folder `model/training/` terpisah) sebagai *referensi struktur*, tapi **kode ditulis ulang** dengan branding, skema, dan logika baru. Repo baru dibuat bersih dalam periode lomba (17 Jun – 25 Agu 2026), commit mengikuti Conventional Commits.
-
----
-
-## 3. Batasan MVP (Pemetaan Eksplisit ke Rulebook §Teknis 1)
+## 2. Batasan MVP (Pemetaan Eksplisit ke Rulebook §Teknis 1)
 
 | Batasan Rulebook | Yang KITA lakukan | Yang TIDAK kita lakukan |
 |---|---|---|
@@ -40,7 +27,7 @@
 
 ---
 
-## 4. Arsitektur & Alur
+## 3. Arsitektur & Alur
 
 ```
                          ┌─────────── OFFLINE (Kaggle) ───────────┐
@@ -59,11 +46,11 @@
                                    Demo: disajikan di RTX 4050 (6GB), 4-bit
 ```
 
-**Satu model, dua peran** (dibedakan lewat prompt): memerankan pelanggan **dan** menilai teknik jualan. **Fine-tune difokuskan ke mode Pelatih** (penilaian terstruktur — inti inovasi); mode Pelanggan mengandalkan kemampuan role-play base model. Ini menjaga "core inference bersih" (kriteria 25%) sekaligus menghemat data.
+**Satu model, dua peran** (dibedakan lewat prompt): memerankan pelanggan **dan** menilai teknik jualan. **Fine-tune difokuskan ke mode Pelatih** (penilaian terstruktur — inti inovasi); mode Pelanggan mengandalkan kemampuan role-play base model. Ini menjaga inti inferensi tetap sempit sekaligus menghemat data.
 
 ---
 
-## 5. Model & Fine-tuning (KEPUTUSAN)
+## 4. Model & Fine-tuning
 
 > **Hasil akhir: `Qwen2.5-3B-Instruct`.** Dokumen ini ditulis di awal proyek dan
 > merencanakan 7B sebagai pilihan utama. Saat dicoba di GPU demo (RTX 4050 6GB),
@@ -81,10 +68,10 @@
 ### Kenapa LoRA + open-weights (bukan API/IndoBERT)
 - **Akurasi:** LLM instruct mampu *reasoning* (menilai kualitas jualan) — jauh di atas classifier kecil.
 - **Patuh aturan:** "Model wajib di fine tune" → LoRA = fine-tune sungguhan milik tim.
-- **Verifiable & lokal:** adapter di-commit ke repo → juri bisa periksa & jalankan via docker. Tak bergantung API berbayar/koneksi.
+- **Dapat diperiksa & lokal:** adapter di-commit ke repo, jadi siapa pun bisa memeriksa dan menjalankannya lewat docker. Tak bergantung API berbayar atau koneksi.
 - **Gratis:** dilatih di Kaggle (16GB), disajikan di 4050.
 
-### Cara fine-tune (di Kaggle — masuk proposal §Metodologi)
+### Cara fine-tune (di Kaggle)
 1. **Base:** unduh `Qwen2.5-7B-Instruct` (HF Hub) di notebook Kaggle (P100 16GB / T4×2).
 2. **Data:** dataset dialog jualan (lihat §6) diformat jadi contoh **instruksi→output**, **terutama untuk mode Pelatih** (penilaian teknik). Mode Pelanggan cukup sedikit contoh gaya (role-play andalkan base).
 3. **QLoRA:** base di-quantize 4-bit (`bitsandbytes`), latih adapter LoRA via `peft` + `trl` `SFTTrainer`. Beberapa ratus–ribu langkah, `lr≈2e-4`, grad checkpointing.
@@ -96,7 +83,7 @@
 
 ---
 
-## 6. Dataset (Dialog Jualan Sintetik — Buatan Tim)
+## 5. Dataset (Dialog Jualan Sintetik — Buatan Tim)
 
 **Kenapa sintetik?** Tidak ada dataset publik Indonesia untuk **percakapan jualan toko offline**. Review e-commerce domainnya salah (ulasan pasca-beli, bukan dialog, tanpa teknik sales). Rulebook eksplisit mengizinkan **data sintetik**, dan untuk domain seniche ini sintetik yang dibuat sesuai konteks **lebih relevan**.
 
@@ -135,9 +122,9 @@ Taksonomi teknik tetap sama; tiap bidang menyumbang produk, jargon, & keberatan 
 |---|---|---|---|
 | **Otomotif (mobil)** | ⭐ **Hero** (fokus demo/video) | Showroom/dealer | boros_bbm, dp_cicilan, bandingkan_merk, harga_jual_kembali |
 | **Elektronik & gadget** | ⭐ **Pendukung** | Toko/pramuniaga | garansi, spek, harga_toko_sebelah, awet |
-| Kartu kredit · Properti/KPR · Asuransi · FMCG kanvas | ○ **Roadmap** (di proposal, tidak dibangun) | — | — |
+| Kartu kredit · Properti/KPR · Asuransi · FMCG kanvas | ○ **Roadmap**, tidak dibangun | — | — |
 
-> Multi-industri = cerita pertumbuhan di proposal (fleksibilitas arsitektur), **bukan dibangun** di penyisihan. Menjaga MVP tidak overbuilt (kriteria 15%).
+> Perluasan lintas industri adalah arah pengembangan yang dimungkinkan arsitektur ini, **bukan sesuatu yang dibangun sekarang**, supaya cakupan MVP tetap sempit.
 
 ### Jumlah
 Target **~150 dialog per bidang** × 2 = **~300 dialog** → beberapa ribu contoh SFT (terutama mode Pelatih), split 80/10/10.
@@ -147,11 +134,11 @@ Target **~150 dialog per bidang** × 2 = **~300 dialog** → beberapa ribu conto
 2. **Generate:** LLM buat dialog per sel, **di-grounding ke framework sales nyata** (SPIN Selling, AIDA, needs-based selling, skrip objection-handling), sekaligus melabeli tiap turn. Buat juga versi "sales lemah" agar model belajar bedanya.
 3. **Validasi otomatis:** tiap dialog dicek terhadap schema dan aturan bisnis (label per pembicara, kehadiran keberatan utama, distribusi kelas) sebelum masuk dataset.
 
-**Yang belum kami kerjakan.** Rencana awal mencakup spot-check sebagian dialog oleh praktisi sales dan penambahan seed dari transkrip percakapan nyata. Keduanya **tidak sempat dijalankan** di tahap penyisihan, jadi seluruh 300 dialog berstatus `divalidasi_manusia: false` kecuali dua contoh tulisan tangan. Konsekuensinya jujur kami akui: keragaman bahasanya masih terikat pola template, dan angka evaluasi yang tinggi ikut mencerminkan keteraturan itu.
+**Yang belum kami kerjakan.** Rencana awal mencakup spot-check sebagian dialog oleh praktisi sales dan penambahan seed dari transkrip percakapan nyata. Keduanya **tidak sempat dijalankan** di tahap penyisihan, jadi seluruh 300 dialog berstatus `divalidasi_manusia: false` kecuali dua contoh tulisan tangan. Konsekuensinya jujur kami akui: keragaman bahasanya masih terikat pola template, dan angka evaluasi yang tinggi ikut mencerminkan keteraturan itu. Validasi dengan transkrip asli adalah langkah pengembangan berikutnya.
 
 ---
 
-## 7. Alur Pengguna (Role-play Loop)
+## 6. Alur Pengguna (Role-play Loop)
 
 1. Pilih **bidang + skenario** (mis. "Otomotif: pelanggan bilang boros bensin").
 2. Pelanggan AI membuka percakapan.
@@ -165,63 +152,7 @@ Target **~150 dialog per bidang** × 2 = **~300 dialog** → beberapa ribu conto
 
 ---
 
-## 8. Struktur Repo (Rencana)
-
-```
-JagoJual/
-├── README.md                 # setup guide + docker compose (WAJIB jelas)
-├── docker-compose.yml
-├── backend/
-│   ├── Dockerfile
-│   ├── requirements.txt
-│   └── app/
-│       ├── main.py           # FastAPI, endpoint sinkron
-│       ├── schemas.py
-│       ├── scenarios.py      # skenario & persona pelanggan
-│       ├── llm.py            # load base + adapter LoRA, inferensi (statis)
-│       ├── roleplay.py       # prompt mode Pelanggan
-│       ├── coach.py          # prompt mode Pelatih + parse skor
-│       └── mock.py           # mock mode (tanpa GPU/model)
-├── frontend/                 # Next.js 14 + Tailwind (2 layar)
-├── model/
-│   ├── training/             # notebook/skrip Kaggle (OFFLINE)
-│   │   ├── 1_generate_data.py
-│   │   ├── 2_prepare_sft.py
-│   │   ├── 3_finetune_qlora.py   # peft + trl (Kaggle)
-│   │   ├── 4_evaluate.py
-│   │   └── README.md             # cara reproduksi di Kaggle
-│   └── checkpoints/          # adapter LoRA (di-commit / dari HF Hub)
-└── data/
-    ├── dialogs/              # dataset dialog sintetik + label
-    └── README.md             # sumber, framework grounding, lisensi
-```
-
----
-
-## 9. Pemetaan ke Kriteria Penilaian (Total 105%)
-
-- **Implementasi & Arsitektur (25%):** LLM fine-tuned (LoRA) sebagai core inference; AI/BE/FE modular; README docker.
-- **Orisinalitas & Dampak (20%):** melatih SDM sales (otomotif/elektronik) = masalah nyata & jarang digarap.
-- **MVP Ready (15%):** scope pas (2 bidang, fine-tune fokus Pelatih); jujur soal keterbatasan (label seed, model kecil).
-- **Proposal (15%):** metodologi kuat — alur pembuatan dataset, langkah QLoRA di Kaggle, evaluasi vs base.
-- **Video Promosi (15%):** storytelling "sales naik kelas" (hero: showroom otomotif).
-- **Relevansi Tema (10%):** pas di Smart Commerce (sales operasional).
-- **Bonus Business/Governance (3.5%):** model bisnis B2B ke dealer/ritel + **bingkai jualan etis** (jujur, tidak manipulatif) + data dianonimkan.
-
----
-
-## 10. Tahapan Kerja (Draft)
-
-1. **M0 – Setup:** repo, docker skeleton, pilih nama final, siapkan akun Kaggle (verifikasi HP).
-2. **M1 – Data:** generate ~300 dialog sintetik (otomotif + elektronik, grounded) + validasi otomatis + format SFT.
-3. **M2 – Fine-tune (Kaggle):** QLoRA Qwen2.5-3B fokus mode Pelatih, evaluasi vs base, simpan adapter → commit repo.
-4. **M3 – Backend:** endpoint sinkron, load base+adapter di 4050, mode Pelanggan & Pelatih, mock mode.
-5. **M4 – Frontend:** 2 layar (pilih bidang+skenario → role-play), ringkasan skor akhir sesi.
-6. **M5 – Polish:** README, seed skenario, video PoW, proposal.
-
----
-
-## 11. Risiko & Mitigasi
+## 7. Risiko & Mitigasi
 
 | Risiko | Mitigasi |
 |---|---|
@@ -230,19 +161,6 @@ JagoJual/
 | Sesi Kaggle mati sebelum training selesai | Checkpoint berkala + simpan adapter ke HF Hub; dataset kecil → training singkat |
 | Model/GPU tak siap saat panitia menjalankan | **Mock mode** (balasan dari skrip) agar app tetap jalan lokal |
 | Kelas tak seimbang di data sintetik | Kontrol distribusi saat generate + weighting saat SFT |
-
----
-
-## 12. Keputusan Final (Semua Terkunci)
-
-- **Nama kerja:** JagoJual (boleh diganti kapan saja).
-- **Bidang:** Otomotif (hero) + Elektronik.
-- **Model:** Qwen2.5-3B-Instruct (Apache-2.0), turun dari rencana awal 7B karena VRAM 4050. ✅
-- **Arsitektur:** 1 LLM fine-tuned (LoRA), fokus mode Pelatih; role-play andalkan base.
-- **Training:** Kaggle (QLoRA) → adapter di repo → demo di 4050 + mock mode.
-- **Dataset:** ~300 dialog sintetik (150/bidang), grounded + validasi otomatis.
-- **Validasi label:** otomatis (schema + aturan bisnis). Validasi praktisi belum dijalankan.
-- **Dibuang:** kepala emosi, auxiliary data publik, bidang finansial, fine-tune role-play, feedback per-giliran.
 
 ---
 

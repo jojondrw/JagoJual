@@ -165,7 +165,7 @@ harus `JAGOJUAL_BASE_MODEL_ID=Qwen/Qwen2.5-3B-Instruct` (sudah jadi default di
 
 ## Langkah 5 — Evaluasi (jangan dilewat)
 
-Ini yang mengubah klaim "kami fine-tune" jadi bukti. Angkanya masuk proposal §Metodologi.
+Ini yang mengubah klaim "kami fine-tune" jadi bukti yang bisa diperiksa ulang.
 
 ```python
 !python 4_evaluate.py \
@@ -192,8 +192,8 @@ di-parse — itulah nilai konkret fine-tuning yang bisa kamu tunjukkan ke juri.
 Dekoding greedy, jadi angkanya bisa direproduksi. Prediksi yang gagal di-parse dihitung
 **salah**, bukan dibuang — kalau dibuang, model yang sering ngawur malah terlihat unggul.
 
-> Kalau hasilnya ternyata fine-tuned **tidak** lebih baik, tulis apa adanya di proposal
-> berikut dugaan sebabnya. Rulebook menilai metodologi; hasil negatif yang jujur dan
+> Kalau hasilnya ternyata fine-tuned **tidak** lebih baik, catat apa adanya berikut dugaan
+> sebabnya. Hasil negatif yang jujur dan
 > dianalisis lebih bernilai daripada angka yang dipoles.
 
 ---
@@ -211,8 +211,8 @@ git commit -m "feat: tambah adapter LoRA hasil fine-tune QLoRA Qwen2.5-3B"
 git push
 ```
 
-Sertakan juga `training_meta.json` dan `eval.json` — dua file itu yang membuktikan angka
-di proposal bukan karangan.
+Sertakan juga `training_meta.json` dan `eval.json` — dua berkas itu yang membuat angka
+hasil evaluasi bisa diperiksa ulang, bukan sekadar diklaim.
 
 ---
 

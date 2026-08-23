@@ -10,7 +10,7 @@ tetap di bawah — BUKAN dengan memanggil LLM sekali lagi. Konsekuensinya:
   * Yang dipelajari model = pemetaan "percakapan -> diagnosis", bukan meniru gaya
     tulis LLM guru. Ini memperkecil risiko "model hanya sepandai LLM-nya" (PLAN.md §6).
 
-BATASAN YANG HARUS DITULIS DI PROPOSAL (jujur):
+BATASAN YANG DIAKUI:
 Kalimat `catatan` & `saran` berasal dari bank teks rubrik, jadi variasi bahasanya
 terbatas. Model belajar MEMILIH diagnosis yang tepat, bukan mengarang saran baru.
 Untuk MVP ini disengaja: penilaian yang stabil lebih berguna bagi trainee daripada

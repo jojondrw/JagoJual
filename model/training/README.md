@@ -72,7 +72,7 @@ Semua label bersumber dari `data/taxonomy.json` (single source of truth, selaras
 Target `coach_sesi` **tidak** dibuat dengan memanggil LLM lagi, melainkan diturunkan dari
 label emas per-turn lewat rubrik tetap di `rubric.py` (bobot teknik, skor per teknik, pemilihan
 saran). Konsekuensi jujurnya: kalimat saran berasal dari bank teks, jadi model belajar **memilih
-diagnosis yang tepat**, bukan mengarang saran baru — tulis ini di proposal §Metodologi.
+diagnosis yang tepat**, bukan mengarang saran baru.
 
 Split 80/10/10 dikelompokkan per `scenario_id` dan distratifikasi per `bidang`, jadi tidak ada
 giliran dari satu dialog yang bocor ke dua split. `data/sft/` sengaja **tidak di-commit**
@@ -98,7 +98,7 @@ python 3_finetune_qlora.py \
 # base model default sudah Qwen2.5-3B-Instruct, sama dengan yang dipakai backend.
 # Jangan ganti tanpa melatih ulang: adapter tidak bisa dipasang ke base beda ukuran.
 
-# 2) buktikan fine-tune memberi nilai tambah (angka ini masuk proposal)
+# 2) ukur apakah fine-tune memberi nilai tambah dibanding base model
 python 4_evaluate.py --test ../../data/sft/test.jsonl \
                      --adapter ../checkpoints --mode both \
                      --out ../checkpoints/eval.json
