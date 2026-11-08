@@ -15,7 +15,7 @@ Toko offline melatih sales lewat role-play manual: butuh senior yang jadi "pelan
 palsu", subyektif, dan tidak scalable. Sales baru sering belajar langsung ke pelanggan
 asli, artinya **belajar dari transaksi yang gagal**. JagoJual memindahkan latihan itu ke
 lingkungan aman: trainee bisa mengulang skenario sulit (pelanggan sensitif harga, cuma
-lihat-lihat, banyak nanya) sebanyak yang dia mau, dan dapat penilaian objektif yang
+lihat-lihat, banyak nanya) sebanyak yang dia mau, dan mendapat penilaian berbasis rubrik yang
 **konsisten**, bukan mood trainer.
 
 **Kenapa butuh AI beneran (bukan if-else):** menilai apakah sebuah kalimat sales itu
@@ -27,7 +27,7 @@ butuh pemahaman bahasa yang tidak bisa dicocokkan kata kunci. Itulah komponen ya
 
 ## Bukti fine-tuning berhasil (`model/checkpoints/eval.json`)
 
-Adapter kami diuji melawan base model yang sama pada test set yang sama:
+Adapter kami diuji melawan base model pada data uji sintetik yang sama. MAE skor sesi diukur terhadap rubrik deterministik dari label dialog; hasil ini belum membuktikan kualitas penilaian pada percakapan nyata. Rincian: [eval.json](model/checkpoints/eval.json).
 
 | Metrik (mode Pelatih) | Base Qwen2.5-3B | **Fine-tuned** |
 |---|---|---|
@@ -42,7 +42,7 @@ Adapter kami diuji melawan base model yang sama pada test set yang sama:
 > data sintetik** kami (tugas mudah dipelajari), jadi pada percakapan dunia nyata yang lebih
 > bervariasi kami memperkirakan angkanya lebih rendah. Yang valid sebagai bukti adalah
 > **lompatan relatifnya** (46,0% ke 99,5%, MAE 11,76 ke 4,97): fine-tuning mengubah model kecil
-> yang lemah menjadi penilai yang andal, cukup ringan untuk berjalan di GPU 6GB. Validasi
+> yang lebih sesuai dengan rubrik pada data uji sintetik, cukup ringan untuk berjalan di GPU 6GB. Validasi
 > dengan transkrip asli adalah langkah pengembangan berikutnya.
 
 ---
