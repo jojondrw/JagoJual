@@ -41,8 +41,8 @@ Adapter kami diuji melawan base model pada data uji sintetik yang sama. MAE skor
 > setelah fine-tuning naik ke 99,5%. Skor mendekati sempurna ini mencerminkan **konsistensi
 > data sintetik** kami (tugas mudah dipelajari), jadi pada percakapan dunia nyata yang lebih
 > bervariasi kami memperkirakan angkanya lebih rendah. Yang valid sebagai bukti adalah
-> **lompatan relatifnya** (46,0% ke 99,5%, MAE 11,76 ke 4,97): fine-tuning mengubah model kecil
-> yang lebih sesuai dengan rubrik pada data uji sintetik, cukup ringan untuk berjalan di GPU 6GB. Validasi
+> **lompatan relatifnya** (46,0% ke 99,5%, MAE 11,76 ke 4,97): model fine-tuned menjadi
+> lebih sesuai dengan rubrik pada data uji sintetik, cukup ringan untuk berjalan di GPU 6GB. Validasi
 > dengan transkrip asli adalah langkah pengembangan berikutnya.
 
 ---
